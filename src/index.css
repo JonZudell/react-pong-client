@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .App {
+        @apply flex items-center justify-center min-h-screen;
+        background-color: darkslategrey;
+        height: 100vh;
+        width: 100vw;
+    }
+
+    .Game {
+        background-color: black;
+    }
+}
