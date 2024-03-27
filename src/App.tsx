@@ -6,31 +6,110 @@ import Ball from "./components/Ball";
 function App() {
   const [start, setStart] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState<boolean>(false);
+  const [win, setWin] = React.useState<boolean>(false);
+  const [lose, setLose] = React.useState<boolean>(false);
   const [modalOpen, setModalOpen] = React.useState<boolean>(true);
   const [name, setName] = React.useState<string>("Anonymous");
   const [socket, setSocket] = React.useState<WebSocket | null>(null);
+  const [started, setStarted] = React.useState<boolean>(false);
+
+  const [playerAName, setPlayerAName] = React.useState<string | null>(null);
+  const [playerBName, setPlayerBName] = React.useState<string | null>(null);
 
   const [paddleA, setPaddleA] = React.useState<Paddle | null>(null);
   const [paddleB, setPaddleB] = React.useState<Paddle | null>(null);
+
+  const [scoreA, setScoreA] = React.useState<number | null>(null);
+  const [scoreB, setScoreB] = React.useState<number | null>(null);
+
   const [ball, setBall] = React.useState<Ball | null>(null);
 
   const canvas = React.useRef<HTMLCanvasElement>(null);
   React.useEffect(() => {
     draw();
-  }, [paddleA, paddleB, ball]);
+  }, [paddleA, paddleB, ball, scoreA, scoreB, win, lose, playerAName, playerBName]);
+  React.useEffect(() => {
+    document.addEventListener("keyup", function (event) {
+      if (event.key === "w") {
+        if (socket) {
+          socket.send(
+            '{"type" : "input", "input" : "up", "status" : "released"}'
+          );
+        }
+      }
+      if (event.key === "s") {
+        if (socket) {
+          socket.send(
+            '{"type" : "input", "input" : "down", "status" : "released"}'
+          );
+        }
+      }
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "w") {
+        if (socket) {
+          socket.send('{"type" : "input", "input" : "up", "status" : "down"}');
+        }
+      }
+      if (event.key === "s") {
+        if (socket) {
+          socket.send(
+            '{"type" : "input", "input" : "down", "status" : "down"}'
+          );
+        }
+      }
+    });
+  });
   const draw = () => {
     if (canvas.current) {
       const ctx = canvas.current.getContext("2d");
       if (ctx) {
         ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
-        if (paddleA) {
-          paddleA.draw(ctx);
+        if (started) {
+          if (paddleA) {
+            paddleA.draw(ctx);
+          }
+          if (paddleB) {
+            paddleB.draw(ctx);
+          }
+          if (ball) {
+            ball.draw(ctx);
+          }
+          if (scoreA !== null && scoreB !== null) {
+            ctx.font = "30px Arial";
+            ctx.fillStyle = "white";
+            ctx.fillText(scoreA.toString(), canvas.current.width / 2 - 50, 50);
+            ctx.fillText(scoreB.toString(), canvas.current.width / 2 + 25, 50);
+          }
+          if (playerAName && playerBName) {
+            ctx.font = "20px Arial";
+            ctx.fillStyle = "white";
+            ctx.fillText(playerAName, 20, 50);
+            const playerBNameWidth = ctx.measureText(playerBName).width;
+            ctx.fillText(
+              playerBName,
+              canvas.current.width - playerBNameWidth - 20,
+              50
+            );
+          }
         }
-        if (paddleB) {
-          paddleB.draw(ctx);
+        if (win) {
+          ctx.font = "50px Arial";
+          ctx.fillStyle = "white";
+          ctx.fillText(
+            "You Win!",
+            canvas.current.width / 2 - 100,
+            canvas.current.height / 2
+          );
         }
-        if (ball) {
-          ball.draw(ctx);
+        if (lose) {
+          ctx.font = "50px Arial";
+          ctx.fillStyle = "white";
+          ctx.fillText(
+            "You Lose!",
+            canvas.current.width / 2 - 100,
+            canvas.current.height / 2
+          );
         }
       }
     }
@@ -66,6 +145,18 @@ function App() {
             message.game.Ball.y
           )
         );
+        setScoreA(message.game.scoreA);
+        setScoreB(message.game.scoreB);
+      } else if (message["type"] === "begin") {
+        setPlayerAName(message.playerAName);
+        setPlayerBName(message.playerBName);
+        setStarted(true);
+      } else if (message["type"] === "win") {
+        setStarted(false);
+        setWin(true);
+      } else if (message["type"] === "lose") {
+        setStarted(false);
+        setLose(true);
       }
     }
   };
@@ -80,6 +171,7 @@ function App() {
       socket.onopen = function () {
         const message = {
           type: "ready",
+          player: name,
         };
         socket.send(JSON.stringify(message));
         const paddleA = new Paddle(25, 100, 937.5, 325);
@@ -111,7 +203,6 @@ function App() {
         >
           Start
         </button>
-        {loading && <div className="spinner">SPIN BABY</div>}
       </Modal>
       <canvas className="Game" ref={canvas} width={1000} height={750}></canvas>
     </div>

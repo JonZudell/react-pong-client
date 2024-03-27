@@ -4,13 +4,16 @@
 
 @layer components {
     .App {
-        @apply flex items-center justify-center min-h-screen;
+        @apply min-h-screen;
         background-color: darkslategrey;
         height: 100vh;
         width: 100vw;
     }
 
     .Game {
+        @apply min-h-screen;
         background-color: black;
+        height: 80%;
+        width: 100%;
     }
 }
