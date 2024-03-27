@@ -27,7 +27,7 @@ function App() {
   const canvas = React.useRef<HTMLCanvasElement>(null);
   React.useEffect(() => {
     draw();
-  }, [paddleA, paddleB, ball, scoreA, scoreB, win, lose, playerAName, playerBName]);
+  }, [paddleA, paddleB, ball, scoreA, scoreB, win, lose, playerAName, playerBName, loading, started]);
   React.useEffect(() => {
     document.addEventListener("keyup", function (event) {
       if (event.key === "w") {
@@ -65,6 +65,17 @@ function App() {
       const ctx = canvas.current.getContext("2d");
       if (ctx) {
         ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
+        if (loading) {
+          const loadingText = "Loading...";
+          const loadingTextWidth = ctx.measureText(loadingText).width;
+          ctx.font = "30px Arial";
+          ctx.fillStyle = "white";
+          ctx.fillText(
+            loadingText,
+            canvas.current.width / 2 - loadingTextWidth / 2,
+            canvas.current.height / 2
+          );
+        }
         if (started) {
           if (paddleA) {
             paddleA.draw(ctx);
@@ -96,18 +107,22 @@ function App() {
         if (win) {
           ctx.font = "50px Arial";
           ctx.fillStyle = "white";
+          const winText = "You Win!";
+          const winTextWidth = ctx.measureText(winText).width;
           ctx.fillText(
-            "You Win!",
-            canvas.current.width / 2 - 100,
+            winText,
+            canvas.current.width / 2 - winTextWidth / 2,
             canvas.current.height / 2
           );
         }
         if (lose) {
           ctx.font = "50px Arial";
           ctx.fillStyle = "white";
+          const loseText = "You Lose!";
+          const loseTextWidth = ctx.measureText(loseText).width;
           ctx.fillText(
-            "You Lose!",
-            canvas.current.width / 2 - 100,
+            loseText,
+            canvas.current.width / 2 - loseTextWidth / 2,
             canvas.current.height / 2
           );
         }
@@ -121,7 +136,6 @@ function App() {
       item.innerText = messages[i];
       var message = JSON.parse(messages[i]);
       if (message["type"] === "gamestate") {
-        console.log(message.game.PlayerA);
         setPaddleA(
           new Paddle(
             message.game.PlayerA.width,
@@ -150,6 +164,7 @@ function App() {
       } else if (message["type"] === "begin") {
         setPlayerAName(message.playerAName);
         setPlayerBName(message.playerBName);
+        setLoading(false);
         setStarted(true);
       } else if (message["type"] === "win") {
         setStarted(false);
@@ -157,6 +172,14 @@ function App() {
       } else if (message["type"] === "lose") {
         setStarted(false);
         setLose(true);
+      } else if (message["type"] === "reset") {
+        setTimeout(() => {
+          setLoading(true);
+          setWin(false);
+          setLose(false);
+          setStart(false);
+          setModalOpen(true);
+        }, 3000);
       }
     }
   };
@@ -174,22 +197,22 @@ function App() {
           player: name,
         };
         socket.send(JSON.stringify(message));
-        const paddleA = new Paddle(25, 100, 937.5, 325);
-        const paddleB = new Paddle(25, 100, 37.5, 325);
-        const ball = new Ball(10, 500, 375);
-        setPaddleA(paddleA);
-        setPaddleB(paddleB);
-        setBall(ball);
+        // const paddleA = new Paddle(25, 100, 937.5, 325);
+        // const paddleB = new Paddle(25, 100, 37.5, 325);
+        // const ball = new Ball(10, 500, 375);
+        // setPaddleA(paddleA);
+        // setPaddleB(paddleB);
+        // setBall(ball);
       };
       setSocket(socket);
-      setLoading(false);
+      setLoading(true);
       setModalOpen(false);
     }
   }, [start]);
 
   return (
     <div className="App">
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} onClose={() => {setModalOpen(false); setLoading(true)}}>
         <h1 className="text-3xl font-bold mb-4">Welcome to Pong Roulette!</h1>
         <input
           type="text"
