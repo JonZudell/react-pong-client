@@ -2,16 +2,17 @@ import React from "react";
 import Modal from "./components/Modal";
 import Paddle from "./components/Paddle";
 import Ball from "./components/Ball";
-
 function App() {
-  const [start, setStart] = React.useState<boolean>(false);
+  const [ready, setReady] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [win, setWin] = React.useState<boolean>(false);
   const [lose, setLose] = React.useState<boolean>(false);
   const [modalOpen, setModalOpen] = React.useState<boolean>(true);
   const [name, setName] = React.useState<string>("Anonymous");
+
   const [socket, setSocket] = React.useState<WebSocket | null>(null);
   const [started, setStarted] = React.useState<boolean>(false);
+  const [reset, setReset] = React.useState<boolean>(false);
 
   const [playerAName, setPlayerAName] = React.useState<string | null>(null);
   const [playerBName, setPlayerBName] = React.useState<string | null>(null);
@@ -27,7 +28,19 @@ function App() {
   const canvas = React.useRef<HTMLCanvasElement>(null);
   React.useEffect(() => {
     draw();
-  }, [paddleA, paddleB, ball, scoreA, scoreB, win, lose, playerAName, playerBName, loading, started]);
+  }, [
+    paddleA,
+    paddleB,
+    ball,
+    scoreA,
+    scoreB,
+    win,
+    lose,
+    playerAName,
+    playerBName,
+    loading,
+    started,
+  ]);
   React.useEffect(() => {
     document.addEventListener("keyup", function (event) {
       if (event.key === "w") {
@@ -132,8 +145,6 @@ function App() {
   const onmessage = function (evt: MessageEvent) {
     var messages = evt.data.split("\n");
     for (var i = 0; i < messages.length; i++) {
-      var item = document.createElement("div");
-      item.innerText = messages[i];
       var message = JSON.parse(messages[i]);
       if (message["type"] === "gamestate") {
         setPaddleA(
@@ -173,46 +184,57 @@ function App() {
         setStarted(false);
         setLose(true);
       } else if (message["type"] === "reset") {
-        setTimeout(() => {
-          setLoading(true);
-          setWin(false);
-          setLose(false);
-          setStart(false);
-          setModalOpen(true);
-        }, 3000);
+        console.log("reset");
+        setWin(false);
+        setLose(false);
+        setReset(true);
+        setReady(true);
       }
     }
   };
 
   React.useEffect(() => {
-    if (start) {
-      setLoading(true);
-      // Code to execute when start is true
-      let socket = new WebSocket("ws://localhost:3000/upgrade");
-
-      socket.onmessage = onmessage;
-      socket.onopen = function () {
-        const message = {
-          type: "ready",
-          player: name,
-        };
-        socket.send(JSON.stringify(message));
-        // const paddleA = new Paddle(25, 100, 937.5, 325);
-        // const paddleB = new Paddle(25, 100, 37.5, 325);
-        // const ball = new Ball(10, 500, 375);
-        // setPaddleA(paddleA);
-        // setPaddleB(paddleB);
-        // setBall(ball);
+    console.log("reset called");
+    if (socket && ready) {
+      console.log(reset);
+      const message = {
+        type: "ready",
+        player: name,
       };
-      setSocket(socket);
-      setLoading(true);
+      socket.send(JSON.stringify(message));
       setModalOpen(false);
+      setLoading(true);
     }
-  }, [start]);
+  }, [ready, reset]);
+
+  React.useEffect(() => {
+    // Code to execute when start is true
+    let socket = new WebSocket("ws://localhost:3000/upgrade");
+
+    socket.onmessage = onmessage;
+    socket.onopen = function () {};
+    socket.onclose = function () {
+      console.log("socket closed");
+    };
+    socket.onerror = function () {
+      console.log("socket error");
+    };
+    setSocket(socket);
+
+    return () => {
+      // Code to execute when the component is unmounted
+      socket.close();
+    };
+  }, []);
 
   return (
     <div className="App">
-      <Modal open={modalOpen} onClose={() => {setModalOpen(false); setLoading(true)}}>
+      <Modal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+        }}
+      >
         <h1 className="text-3xl font-bold mb-4">Welcome to Pong Roulette!</h1>
         <input
           type="text"
@@ -221,7 +243,7 @@ function App() {
           className="border border-gray-300 rounded-md px-4 py-2 mb-4"
         />
         <button
-          onClick={() => setStart(true)}
+          onClick={() => setReady(true)}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
           Start
