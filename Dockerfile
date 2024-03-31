@@ -6,12 +6,13 @@ WORKDIR /app
 
 # Needed for run CMD
 RUN npm install -g serve
-
-# Copy the local directory to the working directory
-COPY . .
+COPY package.json package-lock.json ./
 
 # Install dependencies
 RUN npm install
+
+# Copy the local directory to the working directory
+COPY . .
 
 # Build the project
 RUN npm run build

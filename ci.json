@@ -1,0 +1,6 @@
+[
+  {
+    "image" : "react-pong-client",
+    "dockerfile" : "./"
+  }
+]

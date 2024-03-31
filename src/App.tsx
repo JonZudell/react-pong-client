@@ -206,7 +206,7 @@ function App() {
 
   React.useEffect(() => {
     // Code to execute when start is true
-    let socket = new WebSocket("ws://localhost:3000/upgrade");
+    let socket = new WebSocket(process.env.REACT_APP_WS_URL || "ws://0.0.0.0:3001");
 
     socket.onmessage = onmessage;
     socket.onopen = function () {};
