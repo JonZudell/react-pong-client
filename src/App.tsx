@@ -209,12 +209,14 @@ function App() {
     let socket = new WebSocket(process.env.REACT_APP_WS_URL || "ws://0.0.0.0:3001");
 
     socket.onmessage = onmessage;
-    socket.onopen = function () {};
-    socket.onclose = function () {
-      console.log("socket closed");
+    socket.onopen = function (event: Event) {
+      console.log("open event", event);
     };
-    socket.onerror = function () {
-      console.log("socket error");
+    socket.onclose = function (event: CloseEvent) {
+      console.log("close event", event);
+    };
+    socket.onerror = function (error: Event) {
+      console.log("error event", error);
     };
     setSocket(socket);
 
