@@ -206,7 +206,7 @@ function App() {
 
   React.useEffect(() => {
     // Code to execute when start is true
-    let socket = new WebSocket(process.env.REACT_APP_WS_URL || "ws://0.0.0.0:3001");
+    let socket = new WebSocket(process.env.REACT_APP_WS_URL || "ws://0.0.0.0:3000");
 
     socket.onmessage = onmessage;
     socket.onopen = function (event: Event) {
